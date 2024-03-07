@@ -1,5 +1,7 @@
-'use strict';
+// 'use strict';
 
+import Cycling from "./class/Cicling.js";
+import Running from "./class/Running.js";
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -17,15 +19,12 @@ class App {
 
     #map;
     #mapEvent;
+    #workouts = [];
 
     constructor() {
         this._getPosition();
-
         form.addEventListener('submit', this._newWorkout.bind(this))
-
         inputType.addEventListener('change',this._toggleElevationField )
-
-
     }
 
     _getPosition() {
@@ -37,7 +36,7 @@ class App {
     }
 
     _loadMap(position) {
-        console.log(this);
+        
         const { latitude, longitude } = position.coords
         const coords = [latitude, longitude]
         this.#map = L.map('map').setView(coords, 13);
@@ -65,12 +64,45 @@ class App {
     }
 
     _newWorkout(e) {
+        const validateInputs = (...inputs)=> inputs.every(inp => Number.isFinite(inp))
+        const allPositive = (...inputs) => inputs.every(inp => inp > 0)
+        
         e.preventDefault()
+        let workout ;
+        const type = inputType.value;
+        const distance = +inputDistance.value
+        const duration = +inputDuration.value
         const { lat, lng } = this.#mapEvent.latlng
 
-        L.marker([lat, lng]).addTo(this.#map)
-            .bindPopup(L.popup({ maxWidth: 250, minWidth: 100, autoclose: false, closeOnClick: false, className: 'running-popup ' }))
-            .setPopupContent('Sh Programing')
+        if (type === 'running') {
+            const cadense = +inputCadence.value
+            if (!validateInputs(distance, duration,cadense) || !allPositive(distance, duration , cadense)) {
+                return alert('error value not is number')
+            }
+             workout = new Running([lat,lng], distance, duration, cadense)
+        }
+        
+        if (type === 'cycling') {
+            const elevation = +inputElevation.value
+            
+            if (!validateInputs(distance, duration,elevation) || !allPositive(distance,duration)) {
+                return alert('error value not is number')
+            }
+            workout = new Cycling([lat,lng], distance, duration ,elevation)
+            
+        }
+        
+        this.#workouts.push(workout)
+        
+        
+
+        this.renderWorkoutMArker(workout)
+    }
+
+    renderWorkoutMArker(workout){
+        L.marker(workout.coords).addTo(this.#map)
+            .bindPopup(L.popup({ maxWidth: 250, minWidth: 100, autoclose: false, closeOnClick: false, className: `${workout.type}-popup ` }))
+            .setPopupContent(`${workout.distance}`)
             .openPopup();
 
         inputElevation.value = inputCadence.value = inputDistance.value = inputDuration.value = '';
