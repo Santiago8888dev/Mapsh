@@ -6,6 +6,8 @@ export default class Running extends Workout{
         super(coords,distance,duration)
         this.cadense = cadense
         this.calcPace();
+        this._setDescription()
+
     }
 
     calcPace(){
